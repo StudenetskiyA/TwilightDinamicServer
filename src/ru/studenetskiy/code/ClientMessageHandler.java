@@ -89,7 +89,7 @@ public class ClientMessageHandler {
 							int cc = Commons.sqlZone.getZonePriority(Commons.sql.getUserCurse(parameter.get(2)));
 							int nc = Commons.sqlZone.getZonePriority(parameter.get(3));
 							if (nc > cc) {
-								if (parameter.get(3).contains("Снять заклятие ")) {
+								if (parameter.get(3).contains(Commons.DISPELL_CAST)) {
 									Commons.sql.writeUserCurse(parameter.get(2), "0");
 									server.sendMessage("MESSAGE(Заклятие успешно снято.)");
 								} else {
@@ -130,9 +130,8 @@ public class ClientMessageHandler {
 					server.sendMessage("MESSAGE(Игрок с именем '" + parameter.get(2) + "' не найден.)");
 				}
 			} else if (command.equals("CONNECT")) {
-				CommandUserHere command = CommandUserHere.createCommandFromString(parameter);
-				Commons.sql.writeUserLastConneted(command.userName);
-				server.sendMessage("SUPERUSER(+"+Commons.sql.getSuperUser(command.userName)+")");
+				Commons.sql.writeUserLastConneted(parameter.get(0));
+				server.sendMessage("SUPERUSER("+Commons.sql.getSuperUser(parameter.get(0))+")");
 			} else {
 				// USER(...)
 				CommandUserHere command = CommandUserHere.createCommandFromString(parameter);

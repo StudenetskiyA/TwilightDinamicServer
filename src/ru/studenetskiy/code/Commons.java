@@ -25,7 +25,9 @@ enum PowerSide {
 }
 
 public class Commons {
-	public static final String SERVER_VERSION = "0.116client";
+	public static final String SERVER_VERSION = "0.1161 - client";
+	public static final String DISPELL_CAST = "Снять заклинание ";
+	public static final String HIDE_CAST = "Защита от обнаружения ";
 	private static String database = "jerry";
 //	private static String url = "jdbc:mysql://localhost:3306/jerry?useUnicode=yes&characterEncoding=utf8";
 //	private static String rootLogin = "jerry";
