@@ -12,6 +12,7 @@ public class User {
 	String lastConnected="";
 	String curse="0";
 	int superuser=0;
+	int hidden=0;
 
 	User(String name, String password, int powerSide, int level) {
 		this.name = name;
@@ -19,7 +20,7 @@ public class User {
 		this.powerSide=powerSide;
 		this.level=level;
 	}
-	User(String name,String password, int powerSide, int level, Double lat,Double lon,String lastconnected,String achievements,int superuser,String curse) {
+	User(String name,String password, int powerSide, int level, Double lat,Double lon,String lastconnected,String achievements,int superuser,String curse, int hidden) {
 		this.name = name;
 		this.password=password;
 		this.powerSide=powerSide;
@@ -30,6 +31,7 @@ public class User {
 		this.achievement=achievements;
 		this.curse=curse;
 		this.superuser=superuser;
+		this.hidden = hidden;
 	}
 	
 	User(String name, int powerSide, Double lat,Double lon,String lastconnected) {

@@ -19,10 +19,19 @@ public class ClientMessageHandler {
 
 	void proceed() throws IOException {
 		// TODO Move this
-		if (!Commons.sql.connect()) 	{ server.sendMessage("MESSAGE(server database damaged - cant access.)"); return; }
-		if (!Commons.sqlZone.connect()) { server.sendMessage("MESSAGE(server database damaged - cant access.)"); return; }
-		if (!Commons.sqlLogs.connect()) { server.sendMessage("MESSAGE(server database damaged - cant access.)"); return; }
-		
+		if (!Commons.sql.connect()) {
+			server.sendMessage("MESSAGE(server database damaged - cant access.)");
+			return;
+		}
+		if (!Commons.sqlZone.connect()) {
+			server.sendMessage("MESSAGE(server database damaged - cant access.)");
+			return;
+		}
+		if (!Commons.sqlLogs.connect()) {
+			server.sendMessage("MESSAGE(server database damaged - cant access.)");
+			return;
+		}
+
 		// If user exist and password correct
 		if (Commons.sql.isUserPasswordCorrect(parameter.get(0), parameter.get(1))) {
 			server.sendMessage("Password correct.");
@@ -37,35 +46,39 @@ public class ClientMessageHandler {
 							parameter.get(6), parameter.get(7), parameter.get(8), Integer.parseInt(parameter.get(9)),
 							parameter.get(10), Integer.parseInt(parameter.get(11))));
 					server.sendMessage("MESSAGE(Зона добавлена корректно.)");
-					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(),"ADDZONE",parameter.get(2),
-							Double.parseDouble(parameter.get(3)),Double.parseDouble(parameter.get(4)), Double.parseDouble(parameter.get(5))));
+					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "ADDZONE", parameter.get(2),
+							Double.parseDouble(parameter.get(3)), Double.parseDouble(parameter.get(4)),
+							Double.parseDouble(parameter.get(5))));
 				} else {
 					Commons.sqlZone.updateZone(new Zone(parameter.get(2), Double.parseDouble(parameter.get(3)),
 							Double.parseDouble(parameter.get(4)), Double.parseDouble(parameter.get(5)),
 							parameter.get(6), parameter.get(7), parameter.get(8), Integer.parseInt(parameter.get(9)),
 							parameter.get(10), Integer.parseInt(parameter.get(11))));
 					server.sendMessage("MESSAGE(Зона обновлена корректно.)");
-					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(),"UPDZONE",parameter.get(2),
-							Double.parseDouble(parameter.get(3)),Double.parseDouble(parameter.get(4)), Double.parseDouble(parameter.get(5))));
+					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "UPDZONE", parameter.get(2),
+							Double.parseDouble(parameter.get(3)), Double.parseDouble(parameter.get(4)),
+							Double.parseDouble(parameter.get(5))));
 				}
 			} else if (command.equals("DELETEZONE")) {
 				// TODO Command class
 				if (Commons.sqlZone.isZoneExist(parameter.get(2))) {
 					Commons.sqlZone.deleteZone(parameter.get(2));
 					server.sendMessage("MESSAGE(Зона удалена корректно.)");
-					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(),"DELZONE",parameter.get(2),
-							Double.parseDouble(parameter.get(3)),Double.parseDouble(parameter.get(4)), Double.parseDouble(parameter.get(5))));
+					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "DELZONE", parameter.get(2),
+							Double.parseDouble(parameter.get(3)), Double.parseDouble(parameter.get(4)),
+							Double.parseDouble(parameter.get(5))));
 				} else {
-					server.sendMessage("MESSAGE(Зона '"+parameter.get(2)+"' не существует.)");
+					server.sendMessage("MESSAGE(Зона '" + parameter.get(2) + "' не существует.)");
 				}
 			} else if (command.equals("ADDUSER")) {
 				// TODO Command class?
 				if (!Commons.sql.isUserExist(parameter.get(2))) {
-					User u = new User(parameter.get(2), parameter.get(3), Integer.parseInt(parameter.get(4)), Integer.parseInt(parameter.get(5)));
+					User u = new User(parameter.get(2), parameter.get(3), Integer.parseInt(parameter.get(4)),
+							Integer.parseInt(parameter.get(5)));
 					Commons.sql.addUser(u);
 					server.sendMessage("MESSAGE(Игрок добавлен корректно.)");
 				} else {
-					server.sendMessage("MESSAGE(Игрок '"+parameter.get(2)+"' уже существует.)");
+					server.sendMessage("MESSAGE(Игрок '" + parameter.get(2) + "' уже существует.)");
 				}
 			} else if (command.equals("MAKECURSE")) {
 				// TODO Optimize sql query
@@ -80,12 +93,11 @@ public class ClientMessageHandler {
 									Commons.sql.writeUserCurse(parameter.get(2), "0");
 									server.sendMessage("MESSAGE(Заклятие успешно снято.)");
 								} else {
-								Commons.sql.writeUserCurse(parameter.get(2), parameter.get(3));
-								server.sendMessage("MESSAGE(Проклятие успешно наложено.)");
-								}								
+									Commons.sql.writeUserCurse(parameter.get(2), parameter.get(3));
+									server.sendMessage("MESSAGE(Проклятие успешно наложено.)");
+								}
 							} else {
-								server.sendMessage(
-										"MESSAGE(На игрока действует что-то более сильное.)");
+								server.sendMessage("MESSAGE(На игрока действует что-то более сильное.)");
 							}
 						} else {
 							Commons.sql.writeUserCurse(parameter.get(2), parameter.get(3));
@@ -117,20 +129,25 @@ public class ClientMessageHandler {
 				} else {
 					server.sendMessage("MESSAGE(Игрок с именем '" + parameter.get(2) + "' не найден.)");
 				}
+			} else if (command.equals("CONNECT")) {
+				CommandUserHere command = CommandUserHere.createCommandFromString(parameter);
+				Commons.sql.writeUserLastConneted(command.userName);
+				server.sendMessage("SUPERUSER(+"+Commons.sql.getSuperUser(command.userName)+")");
 			} else {
 				// USER(...)
 				CommandUserHere command = CommandUserHere.createCommandFromString(parameter);
 				if (command.latitude != 0.0 && command.longitude != 0.0) {
 					Commons.sql.writeUserCoordinates(command.userName, command.latitude, command.longitude);
-					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(),"USER",command.userName, command.latitude, command.longitude,0.0));
+					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "USER", command.userName,
+							command.latitude, command.longitude, 0.0));
 				}
 				Commons.sql.writeUserLastConneted(command.userName);
 				// and check enter to zone
 				Zone currentZone = Commons.sqlZone.isInZoneOrFreeZone(command.latitude, command.longitude);
-				if (currentZone==null) {
-					server.sendMessage("MESSAGE(server database damaged - no free zone.)"); 
+				if (currentZone == null) {
+					server.sendMessage("MESSAGE(server database damaged - no free zone.)");
 					return;
-					}
+				}
 				if (currentZone.name.equals(command.userName)) {
 					// Player can't see you own mobile zone, like curse etc.
 				} else {
@@ -187,9 +204,6 @@ public class ClientMessageHandler {
 						}
 					}
 				}
-				// SuperUser
-				if (Commons.sql.isSuperUser(command.userName))
-					server.sendMessage("SUPERUSER()");
 			}
 		} else
 			server.sendMessage("MESSAGE(Неправильный пароль.)");

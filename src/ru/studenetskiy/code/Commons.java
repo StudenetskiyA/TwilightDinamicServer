@@ -25,12 +25,12 @@ enum PowerSide {
 }
 
 public class Commons {
-	public static final String SERVER_VERSION = "0.114S";
+	public static final String SERVER_VERSION = "0.116client";
 	private static String database = "jerry";
-	private static String url = "jdbc:mysql://localhost:3306/jerry?useUnicode=yes&characterEncoding=utf8";
-	private static String rootLogin = "jerry";
-//	private static String url = "jdbc:mysql://localhost:3306/users?useUnicode=yes&characterEncoding=utf8";
-//	private static String rootLogin = "root";
+//	private static String url = "jdbc:mysql://localhost:3306/jerry?useUnicode=yes&characterEncoding=utf8";
+//	private static String rootLogin = "jerry";
+	private static String url = "jdbc:mysql://localhost:3306/users?useUnicode=yes&characterEncoding=utf8";
+	private static String rootLogin = "root";
 	private static String password = "QJaVlKVV";
 	public static final String COMMA="|";
 	//private static String address = "ws://localhost:8080/BHServer/serverendpointdemo";// "ws://test1.uralgufk.ru:8080/BHServer/serverendpointdemo";

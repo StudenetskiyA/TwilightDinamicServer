@@ -13,7 +13,7 @@ public class SQLUserHelper extends SQLHelper {
 
 	void addUser(User z) {
 		String query = "INSERT INTO users (name,password,powerside,level,superuser,curse) VALUES(";
-		query += "'" + z.name + "','" + z.password + "'," + z.powerSide + "," + z.level + "," + z.superuser + "','" + z.curse + "');";
+		query += "'" + z.name + "','" + z.password + "'," + z.powerSide + "," + z.level + "," + z.superuser + ",'" + z.curse + "');";
 		System.out.println("Query : " + query);
 		try {
 			// executing SELECT query
@@ -33,7 +33,7 @@ public class SQLUserHelper extends SQLHelper {
 				if (rs != null) {
 					while (rs.next()) {
 						return new User(rs.getString(1), rs.getString(2), rs.getInt(3), rs.getInt(4), rs.getDouble(5),
-								rs.getDouble(6), rs.getString(7), rs.getString(8), rs.getInt(9), rs.getString(10));
+								rs.getDouble(6), rs.getString(7), rs.getString(8), rs.getInt(9), rs.getString(10), 0);
 					}
 				}
 			} catch (SQLException e) {
@@ -43,6 +43,25 @@ public class SQLUserHelper extends SQLHelper {
 		return null;
 	}
 
+	ArrayList<User> getAllNonHiddenUsersForTimes(int minutes) {
+		ArrayList<User> returnList = new ArrayList<User>();
+		String query = "SELECT * FROM users where hidden=0 AND lastconnected>=NOW()-INTERVAL " + minutes + "MINUTE;";
+		try {
+			ResultSet rs = con.createStatement().executeQuery(query);
+			if (rs != null) {
+				while (rs.next()) {
+					// TODO Change to constant
+					returnList.add(
+							new User(rs.getString(1), rs.getInt(3), rs.getDouble(5), rs.getDouble(6), rs.getString(7)));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return returnList;
+	}
+	
 	ArrayList<User> getAllUsers() {
 		ArrayList<User> returnList = new ArrayList<User>();
 		String query = "SELECT * FROM users;";
@@ -237,7 +256,7 @@ public class SQLUserHelper extends SQLHelper {
 		return false;
 	}
 
-	Boolean isSuperUser(String _userName) {
+	int getSuperUser(String _userName) {
 		if (isUserExist(_userName)) {
 			String query = "SELECT superuser FROM users WHERE name='";
 			query += _userName + "'" + ";";
@@ -247,14 +266,14 @@ public class SQLUserHelper extends SQLHelper {
 				ResultSet rs = stmt.executeQuery(query);
 				if (rs != null) {
 					while (rs.next()) {
-						return rs.getString(1).equals("1");
+						return rs.getInt(1);
 					}
 				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
-		return false;
+		return 0;
 	}
 
 	void writeUserCoordinates(String userName, Double latitude, Double longitude) {

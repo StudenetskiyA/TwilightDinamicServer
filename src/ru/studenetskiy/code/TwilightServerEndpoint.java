@@ -21,7 +21,7 @@ public class TwilightServerEndpoint {
     public void handleOpen(Session session) throws IOException {
         this.session = session;
        
-        System.out.println("NEW client is now connected");
+        System.out.println("NEW client is now connected.");
         sendMessage("Server v."+Commons.SERVER_VERSION+" online.");
     }
 
