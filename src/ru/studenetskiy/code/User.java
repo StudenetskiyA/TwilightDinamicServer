@@ -11,14 +11,15 @@ public class User {
 	int level=8;
 	String lastConnected="";
 	String curse="0";
+	String vampireCall="";
 	int superuser=0;
 	int hidden=0;
 
-	User(String name, String password, int powerSide, int level) {
+	User(String name, String password, int powerSide, int su) {
 		this.name = name;
 		this.password=password;
 		this.powerSide=powerSide;
-		this.level=level;
+		this.superuser=su;
 	}
 	User(String name,String password, int powerSide, int level, Double lat,Double lon,String lastconnected,String achievements,int superuser,String curse, int hidden) {
 		this.name = name;
@@ -44,7 +45,16 @@ public class User {
 		this.lastConnected=lastconnected;
 	}
 	
-	String formatForSearchUser(){
-		return this.name+Commons.COMMA+this.latitude+Commons.COMMA+this.longitude+Commons.COMMA+this.powerSide+Commons.COMMA+this.lastConnected;
+	String formatForSearchUser(int power){
+		String result;
+		result = this.name+Commons.COMMA+this.latitude+Commons.COMMA+this.longitude+Commons.COMMA+this.powerSide+Commons.COMMA+this.lastConnected; 
+		if (power>1) result+=Commons.COMMA+this.curse;
+		else result+=Commons.COMMA+Commons.NOT_DATA_ABOUT_CURSE_FOR_SEARCH;
+		return result;
+	}
+	
+	int rangeBetweenUsers(Double lati, Double longi) {
+		int l = Commons.rangeBetweenPoints(lati, longi, this.latitude, this.longitude);
+		return l;
 	}
 }

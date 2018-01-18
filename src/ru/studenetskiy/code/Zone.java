@@ -12,6 +12,7 @@ public class Zone {
 	String achievement;
 	int priority;
 	int system;
+	int observable;
 
 	Zone(String name, Double latitude, Double longitude, Double radius, String textForHuman, String textForLight,
 			String textForDark,int priority,String achievement,int system) {
@@ -27,8 +28,12 @@ public class Zone {
 		this.system=system;
 	}
 
+	int rangeBetweenUserAndZone(Double lati, Double longi) {
+		return Commons.rangeBetweenPoints(lati, longi, this.latitude, this.longitude);
+	}
+	
 	Boolean isInZone(Double lati, Double longi) {
-		Double l = Math.sqrt(Math.pow(Math.abs(lati - latitude), 2.0) + Math.pow(Math.abs(longi - longitude), 2.0));
+		int l = Commons.rangeBetweenPoints(lati, longi, this.latitude, this.longitude);
 		System.out.println("Radius from "+lati+" to "+latitude+"= "+l);
 		return l <= radius;
 	}
@@ -38,7 +43,11 @@ public class Zone {
 				+ textForDark;
 	}
 	
-	String formatForSearchUser(){
-		return this.name+Commons.COMMA+this.latitude+Commons.COMMA+this.longitude+Commons.COMMA+this.radius+Commons.COMMA+this.priority+Commons.COMMA+this.textForHuman;
+	String formatForSearchUser(int power){
+		String result;
+		result = this.name+Commons.COMMA+this.latitude+Commons.COMMA+this.longitude+Commons.COMMA+this.radius+Commons.COMMA+this.priority;
+	    if (power>2) result+=	Commons.COMMA+this.textForHuman;
+	    else result+=Commons.COMMA+Commons.NOT_DATA_ABOUT_ZONE_FOR_SEARCH;
+		return result;
 	}
 }

@@ -20,18 +20,23 @@ public class ClientMessageHandler {
 	void proceed() throws IOException {
 		// TODO Move this
 		if (!Commons.sql.connect()) {
-			server.sendMessage("MESSAGE(server database damaged - cant access.)");
+			server.sendMessage("MESSAGE(#damage)");
 			return;
 		}
 		if (!Commons.sqlZone.connect()) {
-			server.sendMessage("MESSAGE(server database damaged - cant access.)");
+			server.sendMessage("MESSAGE(#damage)");
 			return;
 		}
 		if (!Commons.sqlLogs.connect()) {
-			server.sendMessage("MESSAGE(server database damaged - cant access.)");
+			server.sendMessage("MESSAGE(#damage)");
 			return;
 		}
 
+		//Check empty server and fill if it needs!
+		if (!Commons.sql.isTableExist()) Commons.sql.firstInitUsersTable();
+		if (!Commons.sqlZone.isTableExist()) Commons.sqlZone.firstInitZonesTable();
+		if (!Commons.sqlLogs.isTableExist()) Commons.sqlLogs.firstInitZonesTable();
+		
 		// If user exist and password correct
 		if (Commons.sql.isUserPasswordCorrect(parameter.get(0), parameter.get(1))) {
 			server.sendMessage("Password correct.");
@@ -45,16 +50,16 @@ public class ClientMessageHandler {
 							Double.parseDouble(parameter.get(4)), Double.parseDouble(parameter.get(5)),
 							parameter.get(6), parameter.get(7), parameter.get(8), Integer.parseInt(parameter.get(9)),
 							parameter.get(10), Integer.parseInt(parameter.get(11))));
-					server.sendMessage("MESSAGE(Зона добавлена корректно.)");
 					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "ADDZONE", parameter.get(2),
 							Double.parseDouble(parameter.get(3)), Double.parseDouble(parameter.get(4)),
 							Double.parseDouble(parameter.get(5))));
+					server.sendMessage("MESSAGE(#newzonecorrect)");
 				} else {
 					Commons.sqlZone.updateZone(new Zone(parameter.get(2), Double.parseDouble(parameter.get(3)),
 							Double.parseDouble(parameter.get(4)), Double.parseDouble(parameter.get(5)),
 							parameter.get(6), parameter.get(7), parameter.get(8), Integer.parseInt(parameter.get(9)),
 							parameter.get(10), Integer.parseInt(parameter.get(11))));
-					server.sendMessage("MESSAGE(Зона обновлена корректно.)");
+					server.sendMessage("MESSAGE(#updatezonecorrect)");
 					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "UPDZONE", parameter.get(2),
 							Double.parseDouble(parameter.get(3)), Double.parseDouble(parameter.get(4)),
 							Double.parseDouble(parameter.get(5))));
@@ -63,7 +68,7 @@ public class ClientMessageHandler {
 				// TODO Command class
 				if (Commons.sqlZone.isZoneExist(parameter.get(2))) {
 					Commons.sqlZone.deleteZone(parameter.get(2));
-					server.sendMessage("MESSAGE(Зона удалена корректно.)");
+					server.sendMessage("MESSAGE(#updatezonecorrect)");
 					Commons.sqlLogs.addRecord(new LogingRecord(Commons.now(), "DELZONE", parameter.get(2),
 							Double.parseDouble(parameter.get(3)), Double.parseDouble(parameter.get(4)),
 							Double.parseDouble(parameter.get(5))));
@@ -80,60 +85,116 @@ public class ClientMessageHandler {
 				} else {
 					server.sendMessage("MESSAGE(Игрок '" + parameter.get(2) + "' уже существует.)");
 				}
+			} else if (command.equals("DIE")) {
+				Commons.sql.deleteUser(parameter.get(0));
+				//Clear vampire call
+				Commons.sql.clearVampireCall(parameter.get(0));
+				server.sendMessage("MESSAGE(Игрок умер корректно.)");
 			} else if (command.equals("MAKECURSE")) {
 				// TODO Optimize sql query
-				if (Commons.sql.isUserExist(parameter.get(2))) {
-					if (Commons.sqlZone.isSystemZoneExist(parameter.get(3))) {
+				if (Commons.sql.isUserExist(parameter.get(2)) && Commons.sqlZone.isSystemZoneExist(parameter.get(3))) {
+					if (parameter.get(3).contains(Commons.DISPELL_CAST)) {
 						if (!Commons.sql.getUserCurse(parameter.get(2)).equals("0")) {
 							// If player already have curse.
 							int cc = Commons.sqlZone.getZonePriority(Commons.sql.getUserCurse(parameter.get(2)));
 							int nc = Commons.sqlZone.getZonePriority(parameter.get(3));
 							if (nc > cc) {
-								if (parameter.get(3).contains(Commons.DISPELL_CAST)) {
-									Commons.sql.writeUserCurse(parameter.get(2), "0");
-									server.sendMessage("MESSAGE(Заклятие успешно снято.)");
-								} else {
-									Commons.sql.writeUserCurse(parameter.get(2), parameter.get(3));
-									server.sendMessage("MESSAGE(Проклятие успешно наложено.)");
-								}
+								Commons.sql.writeUserCurse(parameter.get(2), "0");
+								server.sendMessage("MESSAGE(Заклятие успешно снято.)");
 							} else {
 								server.sendMessage("MESSAGE(На игрока действует что-то более сильное.)");
+							}
+						} else {
+							server.sendMessage("MESSAGE(Игрок не проклят.)");
+						}
+					} else if (parameter.get(3).contains(Commons.HIDE_CAST)) {
+						//Power
+						System.out.println("Power = '"+ parameter.get(3).substring(parameter.get(3).indexOf(Commons.HIDE_CAST)+Commons.HIDE_CAST.length()+1, parameter.get(3).length())+"'");
+						int power = Integer.parseInt(parameter.get(3).substring(parameter.get(3).indexOf(Commons.HIDE_CAST)+Commons.HIDE_CAST.length()+1, parameter.get(3).length()));
+						Commons.sql.writeUserHidden(parameter.get(2), power);
+						server.sendMessage("MESSAGE(Заклятие защиты от обнаружения успешно наложено.)");
+					} else { // Just curse
+						if (!Commons.sql.getUserCurse(parameter.get(2)).equals("0")) {
+							// If player already have curse.
+							int cc = Commons.sqlZone.getZonePriority(Commons.sql.getUserCurse(parameter.get(2)));
+							int nc = Commons.sqlZone.getZonePriority(parameter.get(3));
+							if (nc > cc) {
+								Commons.sql.writeUserCurse(parameter.get(2), parameter.get(3));
+								server.sendMessage("MESSAGE(Проклятие успешно наложено.)");
+							} else {
+								server.sendMessage(
+										"MESSAGE(На игрока действует что-то более сильное или такой же силы.)");
 							}
 						} else {
 							Commons.sql.writeUserCurse(parameter.get(2), parameter.get(3));
 							server.sendMessage("MESSAGE(Проклятие успешно наложено.)");
 						}
-					} else {
-						server.sendMessage("MESSAGE(Проклятие '" + parameter.get(3) + "' не найдено.)");
 					}
 				} else {
-					server.sendMessage("MESSAGE(Игрок '" + parameter.get(2) + "' не найден.)");
+					server.sendMessage("MESSAGE(Игрок или проклятие не найдено.)");
 				}
-			} else if (command.equals("SEARCHALL")) {
-				// Users
-				ArrayList<User> result = new ArrayList<User>();
-				result = Commons.sql.getAllUsers();
-				for (User user : result) {
-					server.sendMessage("SEARCHUSER(" + user.formatForSearchUser() + ")");
-				}
-				// Zones
-				ArrayList<Zone> resultZ = new ArrayList<Zone>();
-				resultZ = Commons.sqlZone.getZonesListSortByPriority();
-				for (Zone zone : resultZ) {
-					server.sendMessage("SEARCHZONE(" + zone.formatForSearchUser() + ")");
+			} else if (command.equals("VAMPIRESEND")) {
+				if (Commons.sql.getUserVampireSender(parameter.get(0)).equals("0")) {
+					if (Commons.sql.isUserExist(parameter.get(2))) {
+						if (!Commons.sql.getUserVampireCaller(parameter.get(2)).equals("0")) {
+							server.sendMessage("MESSAGE(На игрока уже действует зов.)");
+						} else {
+							Commons.sql.writeUserVampireCaller(parameter.get(2), parameter.get(0));
+							Commons.sql.writeUserVampireSender(parameter.get(0), parameter.get(2));
+							server.sendMessage("MESSAGE(Зов успешно послан.)");
+							server.sendMessage("VAMPIRESEND(" + parameter.get(2) + ")");
+						}
+					} else {
+						server.sendMessage("MESSAGE(Игрок с именем '" + parameter.get(2) + "' не найден.)");
+					}
+				} else {
+					if (Commons.sql.getUserVampireCaller(parameter.get(2)).equals(parameter.get(0))) {
+						Commons.sql.writeUserVampireCaller(parameter.get(2), "0");
+						Commons.sql.writeUserVampireSender(parameter.get(0), "0");
+						server.sendMessage("MESSAGE(Зов успешно снят.)");
+						server.sendMessage("VAMPIRESEND(0)");
+					} else {
+						server.sendMessage("MESSAGE(Одновременно можно звать только одного игрока.)");
+					}
 				}
 			} else if (command.equals("SEARCHUSER")) {
 				if (Commons.sql.isUserExist(parameter.get(2))) {
-					User user = Commons.sql.getUser(parameter.get(2));
-					server.sendMessage("SEARCHUSER(" + user.formatForSearchUser() + ")");
+					int power = Integer.parseInt(parameter.get(3));
+					User user = Commons.sql.getNonHiddenUser(parameter.get(2), power);
+					if (user != null) {
+						int radius = Commons.getSearchRadiusFromPower(power);
+						if (user.rangeBetweenUsers(Commons.sql.getUserLatitude(parameter.get(0)),
+								Commons.sql.getUserLongitude(parameter.get(0))) < radius || power == 9)
+							server.sendMessage("SEARCHUSER(" + user.formatForSearchUser(power) + ")");
+						else
+							server.sendMessage("MESSAGE(Игрок вне радиуса поиска или под защитой от обнаружения.)");
+					} else
+						server.sendMessage("MESSAGE(Игрок вне радиуса поиска или под защитой от обнаружения.)");
 				} else {
 					server.sendMessage("MESSAGE(Игрок с именем '" + parameter.get(2) + "' не найден.)");
 				}
+			} else if (command.equals("SCANUSER")) {
+				int power = Integer.parseInt(parameter.get(2));
+				// Users
+				ArrayList<User> result = new ArrayList<User>();
+				result = Commons.sql.getAllNonHiddenUsersForTimesInRange(Commons.MINUTES_FOR_SEARCH_IN_PAST, power,
+						Commons.sql.getUserLatitude(parameter.get(0)), Commons.sql.getUserLongitude(parameter.get(0)));
+				for (User user : result) {
+					server.sendMessage("SEARCHUSER(" + user.formatForSearchUser(power) + ")");
+				}
+				if (power > 1) {
+					// Zones
+					ArrayList<Zone> resultZ = new ArrayList<Zone>();
+					resultZ = Commons.sqlZone.getZonesListInRange(power, Commons.sql.getUserLatitude(parameter.get(0)),
+							Commons.sql.getUserLongitude(parameter.get(0)));
+					for (Zone zone : resultZ) {
+						server.sendMessage("SEARCHZONE(" + zone.formatForSearchUser(power) + ")");
+					}
+				}
 			} else if (command.equals("CONNECT")) {
 				Commons.sql.writeUserLastConneted(parameter.get(0));
-				server.sendMessage("SUPERUSER("+Commons.sql.getSuperUser(parameter.get(0))+")");
-			} else {
-				// USER(...)
+				server.sendMessage("SUPERUSER(" + Commons.sql.getSuperUser(parameter.get(0)) + ")");
+			} else if (command.equals("USER")) {
 				CommandUserHere command = CommandUserHere.createCommandFromString(parameter);
 				if (command.latitude != 0.0 && command.longitude != 0.0) {
 					Commons.sql.writeUserCoordinates(command.userName, command.latitude, command.longitude);
@@ -142,25 +203,22 @@ public class ClientMessageHandler {
 				}
 				Commons.sql.writeUserLastConneted(command.userName);
 				// and check enter to zone
-				Zone currentZone = Commons.sqlZone.isInZoneOrFreeZone(command.latitude, command.longitude);
+				Zone currentZone = Commons.sqlZone.isInZoneOrFreeZone(command.latitude, command.longitude,
+						command.userName);
 				if (currentZone == null) {
 					server.sendMessage("MESSAGE(server database damaged - no free zone.)");
 					return;
 				}
-				if (currentZone.name.equals(command.userName)) {
-					// Player can't see you own mobile zone, like curse etc.
+				// check powerside
+				PowerSide side = Commons.sql.getUserPowerside(command.userName);
+				if (side == PowerSide.Human && !currentZone.textForHuman.equals("")) {
+					server.sendMessage("ZONE(" + currentZone.textForHuman + ")");
+				} else if (side == PowerSide.Light && !currentZone.textForLight.equals("")) {
+					server.sendMessage("ZONE(" + currentZone.textForLight + ")");
+				} else if (side == PowerSide.Dark && !currentZone.textForDark.equals("")) {
+					server.sendMessage("ZONE(" + currentZone.textForDark + ")");
 				} else {
-					// check powerside
-					PowerSide side = Commons.sql.getUserPowerside(command.userName);
-					if (side == PowerSide.Human && !currentZone.textForHuman.equals("")) {
-						server.sendMessage("ZONE(" + currentZone.textForHuman + ")");
-					} else if (side == PowerSide.Light && !currentZone.textForLight.equals("")) {
-						server.sendMessage("ZONE(" + currentZone.textForLight + ")");
-					} else if (side == PowerSide.Dark && !currentZone.textForDark.equals("")) {
-						server.sendMessage("ZONE(" + currentZone.textForDark + ")");
-					} else {
-						server.sendMessage("ZONE(" + Commons.sqlZone.getFreeZone().textForHuman + ")");
-					}
+					server.sendMessage("ZONE(" + Commons.sqlZone.getFreeZone().textForHuman + ")");
 				}
 				// Achievements
 				// You must see all zones, never mind priority!!!
@@ -203,9 +261,21 @@ public class ClientMessageHandler {
 						}
 					}
 				}
+				// Vampire call and send
+				String vc = Commons.sql.getUserVampireCaller(command.userName);
+				if (!vc.equals("0")) {
+					server.sendMessage("VAMPIRECALL(" + vc + ")");
+				}
+				String vs = Commons.sql.getUserVampireSender(command.userName);
+				if (!vs.equals("0")) {
+					server.sendMessage("VAMPIRESEND(" + vs + ")");
+				}
+				//End of protection
+				Commons.sql.endUserProtection(command.userName);
 			}
-		} else
-			server.sendMessage("MESSAGE(Неправильный пароль.)");
+		} else {
+			server.sendMessage("MESSAGE(Неправильный логин или пароль.)");
+		}
 
 		// TODO Move this
 		Commons.sql.disconnect();
